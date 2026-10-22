@@ -1,13 +1,12 @@
 /**
- * Main Application Controller
- * Coordinates UI inputs, Method 1 & 2 puzzle generation, search execution, visualizer playback, and comparison benchmarks.
+ * Main Application Controller - Dedicated to Algorithm 1: Breadth-First Search (BFS)
+ * Coordinates UI inputs, Method 1 & 2 puzzle generation, BFS search execution, and playback.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   const searchEngine = new SearchEngine();
-  const comparisonEngine = new ComparisonEngine(searchEngine);
 
-  // Default state initialization (Method 1 preset sample from PDF)
+  // Default state initialization (Method 1 preset sample from assignment PDF)
   let initialBoard = [2, 8, 3, 1, 6, 4, 7, 0, 5];
   let goalBoard = [1, 2, 3, 8, 0, 4, 7, 6, 5];
   let currentSolutionResult = null;
@@ -21,11 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // UI Elements
   const initialInputs = document.querySelectorAll('.initial-matrix-cell');
   const goalInputs = document.querySelectorAll('.goal-matrix-cell');
-  const algorithmSelect = document.getElementById('algorithm-select');
-  const heuristicGroup = document.getElementById('heuristic-selection-group');
-  const heuristicSelect = document.getElementById('heuristic-select');
-  const dlsLimitGroup = document.getElementById('dls-limit-group');
-  const dlsLimitInput = document.getElementById('dls-limit-input');
   
   const solvabilityBadge = document.getElementById('solvability-status-badge');
   const runBtn = document.getElementById('btn-run-search');
@@ -38,12 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const speedSlider = document.getElementById('speed-slider');
   const speedLabel = document.getElementById('speed-label');
 
-  // Comparison UI
-  const runBenchmarkBtn = document.getElementById('btn-run-benchmark');
-  const benchmarkTableBody = document.getElementById('benchmark-table-body');
-  const benchmarkProgress = document.getElementById('benchmark-progress-bar');
-  const benchmarkStatusText = document.getElementById('benchmark-status-text');
-
   // Navigation tab switching
   setupNavigation();
 
@@ -53,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSolvabilityDisplay();
   visualizer.renderBoard(initialBoard);
 
-  // Sync Input changes (Method 1)
+  // Sync Input changes (Method 1: Manual State Entry)
   initialInputs.forEach((cell, idx) => {
     cell.addEventListener('input', () => {
       handleCellInput(cell, idx, initialInputs, 'initial');
@@ -91,31 +79,13 @@ document.addEventListener('DOMContentLoaded', () => {
   randomBtn?.addEventListener('click', () => {
     const readGoal = getBoardFromInputs(goalInputs);
     const targetGoal = readGoal.valid ? readGoal.board : goalBoard;
-    initialBoard = PuzzleUtil.generateRandomSolvable(targetGoal, 22);
+    initialBoard = PuzzleUtil.generateRandomSolvable(targetGoal, 18);
     populateMatrixInputs(initialInputs, initialBoard);
     updateSolvabilityDisplay();
     visualizer.renderBoard(initialBoard);
   });
 
-  // Algorithm Selection Logic
-  algorithmSelect.addEventListener('change', () => {
-    const algo = algorithmSelect.value;
-    // Show/hide Heuristic dropdown for GBFS and A*
-    if (algo === 'gbfs' || algo === 'astar') {
-      heuristicGroup.classList.remove('d-none');
-    } else {
-      heuristicGroup.classList.add('d-none');
-    }
-
-    // Show/hide Depth Limit for DLS
-    if (algo === 'dls') {
-      dlsLimitGroup.classList.remove('d-none');
-    } else {
-      dlsLimitGroup.classList.add('d-none');
-    }
-  });
-
-  // Run Search Execution
+  // Run BFS Search Execution
   runBtn.addEventListener('click', async () => {
     const parseInitial = getBoardFromInputs(initialInputs);
     const parseGoal = getBoardFromInputs(goalInputs);
@@ -138,51 +108,21 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const algo = algorithmSelect.value;
-    const heuristic = heuristicSelect.value;
-    const dlsLimit = parseInt(dlsLimitInput.value, 10) || 12;
-
     setSearchingState(true);
 
     try {
-      let result;
-      switch (algo) {
-        case 'bfs':
-          result = await searchEngine.solveBFS(initialBoard, goalBoard);
-          break;
-        case 'dfs':
-          result = await searchEngine.solveDFS(initialBoard, goalBoard, { depthCutoff: 30 });
-          break;
-        case 'dls':
-          result = await searchEngine.solveDLS(initialBoard, goalBoard, dlsLimit);
-          break;
-        case 'iddls':
-          result = await searchEngine.solveIDDLS(initialBoard, goalBoard, { maxIterativeDepth: 20 });
-          break;
-        case 'ucs':
-          result = await searchEngine.solveUCS(initialBoard, goalBoard);
-          break;
-        case 'gbfs':
-          result = await searchEngine.solveGBFS(initialBoard, goalBoard, heuristic);
-          break;
-        case 'astar':
-          result = await searchEngine.solveAStar(initialBoard, goalBoard, heuristic);
-          break;
-        default:
-          result = await searchEngine.solveBFS(initialBoard, goalBoard);
-      }
-
+      const result = await searchEngine.solveBFS(initialBoard, goalBoard);
       currentSolutionResult = result;
       displaySolutionSummary(result);
       visualizer.loadSolution(result);
 
       if (result.found) {
-        // Auto play on successful solve
+        // Automatically start smooth playback on solution found
         visualizer.play();
       }
     } catch (err) {
-      console.error('Search failure:', err);
-      alert('An error occurred during search: ' + err.message);
+      console.error('BFS Search failure:', err);
+      alert('An error occurred during BFS search: ' + err.message);
     } finally {
       setSearchingState(false);
     }
@@ -199,46 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const val = parseFloat(speedSlider.value);
     speedLabel.textContent = `${val.toFixed(1)}x`;
     visualizer.setSpeed(val);
-  });
-
-  // Comparison Benchmark Runner (Section 7)
-  runBenchmarkBtn?.addEventListener('click', async () => {
-    const parseInitial = getBoardFromInputs(initialInputs);
-    const parseGoal = getBoardFromInputs(goalInputs);
-
-    if (!parseInitial.valid || !parseGoal.valid) {
-      alert('Please enter valid Initial and Goal configurations in the Visualizer tab first.');
-      return;
-    }
-
-    initialBoard = parseInitial.board;
-    goalBoard = parseGoal.board;
-
-    if (!PuzzleUtil.isSolvable(initialBoard, goalBoard)) {
-      alert('Puzzle instance is unsolvable. Please select or generate a solvable configuration first.');
-      return;
-    }
-
-    runBenchmarkBtn.disabled = true;
-    benchmarkStatusText.textContent = 'Running benchmarks across algorithms...';
-
-    const results = await comparisonEngine.runAllBenchmarks(
-      initialBoard,
-      goalBoard,
-      {
-        dlsLimit: parseInt(dlsLimitInput.value, 10) || 12,
-        heuristic: heuristicSelect.value
-      },
-      (prog) => {
-        const pct = Math.round(((prog.currentIndex + 1) / prog.total) * 100);
-        if (benchmarkProgress) benchmarkProgress.style.width = `${pct}%`;
-        if (benchmarkStatusText) benchmarkStatusText.textContent = `Testing ${prog.currentAlgorithm}... (${prog.currentIndex + 1}/${prog.total})`;
-      }
-    );
-
-    renderBenchmarkTable(results);
-    runBenchmarkBtn.disabled = false;
-    benchmarkStatusText.textContent = 'Benchmark execution completed successfully!';
   });
 
   // Helper Functions
@@ -305,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (solvable) {
       solvabilityBadge.className = 'solvability-badge solvable-yes';
-      solvabilityBadge.innerHTML = `<span>✓ Solvable</span> <small class="ms-1 text-muted">(Inversions: Start ${initialInv}, Goal ${goalInv})</small>`;
+      solvabilityBadge.innerHTML = `<span>✓ Solvable Configuration</span> <small class="ms-1 text-muted">(Inversions: Start ${initialInv}, Goal ${goalInv})</small>`;
       runBtn.disabled = false;
     } else {
       solvabilityBadge.className = 'solvability-badge solvable-no';
@@ -317,10 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function setSearchingState(isSearching) {
     if (isSearching) {
       runBtn.disabled = true;
-      runBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Searching...';
+      runBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Searching with BFS...';
     } else {
       runBtn.disabled = false;
-      runBtn.innerHTML = '<span>▶</span> Run Search';
+      runBtn.innerHTML = '<span>▶</span> Run BFS Search';
     }
   }
 
@@ -351,8 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update real-time process monitoring elements
     document.getElementById('rt-current-depth').textContent = step.depth;
     document.getElementById('rt-path-cost').textContent = step.cost;
-    document.getElementById('rt-h-value').textContent = step.h !== undefined ? step.h : '-';
-    document.getElementById('rt-f-value').textContent = step.f !== undefined ? step.f : '-';
     document.getElementById('rt-last-move').textContent = step.move || 'Start';
 
     if (searchStep) {
@@ -384,35 +282,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="mini-grid">
           ${node.board.map(v => `<div class="mini-tile ${v === 0 ? 'blank' : ''}">${v === 0 ? '' : v}</div>`).join('')}
         </div>
-        <span class="text-muted" style="font-size:0.7rem;">d: ${node.depth}</span>
+        <span class="text-muted" style="font-size:0.7rem;">depth: ${node.depth}</span>
       `;
       container.appendChild(card);
-    });
-  }
-
-  function renderBenchmarkTable(results) {
-    if (!benchmarkTableBody) return;
-    benchmarkTableBody.innerHTML = '';
-
-    results.forEach(row => {
-      const tr = document.createElement('tr');
-      const foundBadge = row.found === 'Yes' 
-        ? '<span class="badge-yes">Yes</span>' 
-        : '<span class="badge-no">No</span>';
-
-      let memClass = 'badge-mem-low';
-      if (row.memory === 'Medium') memClass = 'badge-mem-med';
-      if (row.memory === 'High') memClass = 'badge-mem-high';
-
-      tr.innerHTML = `
-        <td class="fw-bold">${row.algorithm}</td>
-        <td>${foundBadge}</td>
-        <td>${row.nodesExpanded}</td>
-        <td>${row.moves}</td>
-        <td>${row.time}</td>
-        <td><span class="${memClass}">${row.memory}</span></td>
-      `;
-      benchmarkTableBody.appendChild(tr);
     });
   }
 

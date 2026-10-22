@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>8-Puzzle AI Search Solver & Visualizer</title>
+  <meta name="description" content="Interactive 8-Puzzle Problem Solver using AI Search Algorithms (BFS, DFS, DLS, IDDLS, GBFS, A*) with step-by-step state-space visualization.">
+  
+  <!-- Bootstrap 5 CSS Grid & Utilities -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom Modern CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Sticky Top Navigation -->
+  <header class="app-navbar">
+    <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="brand-badge">
+        <span>🧩</span>
+        <span>AI 8-Puzzle Solver</span>
+      </div>
+
+      <nav class="d-flex flex-wrap gap-2" id="main-nav">
+        <button class="nav-pill-btn active" data-target="section-home">🏠 Home</button>
+        <button class="nav-pill-btn" data-target="section-visualizer">⚡ Visualizer</button>
+        <button class="nav-pill-btn" data-target="section-comparison">📊 Comparison</button>
+        <button class="nav-pill-btn" data-target="section-docs">📖 Algorithm Guide</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container-xl py-4">
+
+    <!-- ==========================================
+         SECTION 1: HOME PAGE
+         ========================================== -->
+    <section id="section-home" class="app-section">
+      <div class="hero-banner">
+        <div class="hero-tag">Artificial Intelligence Case Study</div>
+        <h1 class="hero-title">
+          Interactive <span class="hero-gradient-text">8-Puzzle Solver</span>
+        </h1>
+        <p class="hero-subtitle">
+          An interactive web application exploring state-space search algorithms. Watch informed and uninformed AI search techniques explore frontiers, backtrack, evaluate heuristics, and uncover optimal paths to solve the 8-puzzle.
+        </p>
+
+        <!-- Student & Course Details Strip -->
+        <div class="student-meta-strip mb-4">
+          <div class="meta-chip">
+            <span>📚 Course:</span>
+            <strong>Artificial Intelligence</strong>
+          </div>
+          <div class="meta-chip">
+            <span>📝 Assignment:</span>
+            <strong>Digital Assignment (Case Study)</strong>
+          </div>
+          <div class="meta-chip">
+            <span>👤 Student:</span>
+            <strong id="display-student-name">Advaith Sathishkumar</strong>
+          </div>
+          <div class="meta-chip">
+            <span>🆔 Reg No:</span>
+            <strong id="display-reg-no">24BAI0001 / Student ID</strong>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3">
+          <button class="btn-cyber" onclick="document.querySelector('[data-target=\'section-visualizer\']').click()">
+            <span>🚀 Open Interactive Visualizer</span>
+          </button>
+          <button class="btn-cyber-outline" onclick="document.querySelector('[data-target=\'section-comparison\']').click()">
+            <span>📊 View Algorithm Benchmark</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Introduction to 8-Puzzle Problem -->
+      <div class="row g-4 mt-2">
+        <div class="col-lg-6">
+          <div class="glass-card h-100">
+            <div class="glass-card-header">
+              <h2 class="card-title-glow">🎯 What is the 8-Puzzle Problem?</h2>
+            </div>
+            <p class="text-secondary">
+              The <strong>8-Puzzle</strong> is a classical state-space search challenge consisting of a $3 \times 3$ grid with 8 numbered sliding square tiles ($1$ to $8$) and one empty slot (represented by <code>_</code> or <code>0</code>).
+            </p>
+            <p class="text-secondary">
+              Tiles horizontally or vertically adjacent to the blank space can slide into the empty spot. The goal is to reach a designated target arrangement starting from an initial configuration in the minimal number of tile movements.
+            </p>
+            <div class="p-3 rounded-3" style="background: rgba(15,23,42,0.6); border: 1px solid var(--border-color);">
+              <h6 class="text-primary mb-2">Formal Problem Formulation:</h6>
+              <ul class="text-secondary small mb-0 ps-3">
+                <li><strong>State Space:</strong> All permutations of numbers 0 through 8 ($9! = 362,880$ states, half of which are reachable).</li>
+                <li><strong>Actions:</strong> Sliding the blank tile <em>UP</em>, <em>DOWN</em>, <em>LEFT</em>, or <em>RIGHT</em>.</li>
+                <li><strong>Path Cost:</strong> Each single tile movement carries a unit cost $c = 1$.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="glass-card h-100">
+            <div class="glass-card-header">
+              <h2 class="card-title-glow">⚖️ Solvability & Inversion Parity</h2>
+            </div>
+            <p class="text-secondary">
+              Not all board arrangements can reach an arbitrary target goal! In a $3 \times 3$ grid, a state is solvable if and only if the <strong>parity of inversions</strong> matches between initial and goal states.
+            </p>
+            <div class="p-3 rounded-3 mb-3" style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2);">
+              <p class="small text-info mb-1"><strong>Rule:</strong></p>
+              <p class="small mb-0 text-secondary">
+                An inversion occurs whenever a tile with a greater number precedes a tile with a smaller number (ignoring the blank tile).
+                If <code>Inversions(Start) % 2 === Inversions(Goal) % 2</code>, the puzzle is guaranteed solvable.
+              </p>
+            </div>
+            <p class="text-secondary small mb-0">
+              Our application automatically checks and validates this mathematical condition in real time before triggering any search algorithm.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 2: PUZZLE VISUALIZER & CONTROLS
+         ========================================== -->
+    <section id="section-visualizer" class="app-section d-none">
+      <div class="row g-4">
+        
+        <!-- Left Column: Puzzle Input (Method 1 & Method 2) & Algorithm Selection -->
+        <div class="col-lg-5">
+          
+          <!-- Configuration Card -->
+          <div class="glass-card mb-4">
+            <div class="glass-card-header">
+              <h2 class="card-title-glow">⚙️ Puzzle Input & Parameters</h2>
+              <span class="badge bg-secondary">Dual Mode</span>
+            </div>
+
+            <!-- Method 1 / Method 2 Selection Ribbon -->
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">QUICK PRESETS & GENERATOR</label>
+              <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn-cyber-outline btn-sm" id="btn-preset-assignment">
+                  📋 Assignment Example
+                </button>
+                <button type="button" class="btn-cyber-outline btn-sm" id="btn-preset-standard">
+                  🔢 Sequential Goal
+                </button>
+                <button type="button" class="btn-cyber btn-cyber-accent btn-sm" id="btn-random-puzzle">
+                  🎲 Generate Random Puzzle (Method 2)
+                </button>
+              </div>
+            </div>
+
+            <!-- Method 1: User Enters Initial & Goal States -->
+            <div class="row g-3">
+              <!-- Initial State Input -->
+              <div class="col-6">
+                <label class="form-label text-info small fw-bold text-center d-block">
+                  INITIAL STATE (Method 1)
+                </label>
+                <div class="input-matrix-grid">
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell initial-matrix-cell" />
+                </div>
+              </div>
+
+              <!-- Goal State Input -->
+              <div class="col-6">
+                <label class="form-label text-success small fw-bold text-center d-block">
+                  GOAL STATE (Method 1)
+                </label>
+                <div class="input-matrix-grid">
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                  <input type="text" maxlength="1" class="matrix-input-cell goal-matrix-cell" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Solvability Status Badge -->
+            <div class="text-center mt-3">
+              <div id="solvability-status-badge" class="solvability-badge solvable-yes">
+                <span>✓ Solvable Configuration</span>
+              </div>
+            </div>
+
+            <hr class="border-secondary my-3">
+
+            <!-- Algorithm Selection (Section 3) -->
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-semibold">SEARCH ALGORITHM</label>
+              <select class="form-select bg-dark text-light border-secondary" id="algorithm-select">
+                <option value="bfs" selected>1. Breadth First Search (BFS)</option>
+                <option value="dfs">2. Depth First Search (DFS)</option>
+                <option value="dls">3. Depth Limited Search (DLS)</option>
+                <option value="iddls">4. Iterative Deepening DLS (IDDLS)</option>
+                <option value="ucs">5. Uniform Cost Search (UCS)</option>
+                <option value="gbfs">6. Greedy Best First Search (GBFS)</option>
+                <option value="astar">7. A* Search</option>
+              </select>
+            </div>
+
+            <!-- Depth Limit (For DLS) -->
+            <div class="mb-3 d-none" id="dls-limit-group">
+              <label class="form-label text-muted small fw-semibold">DEPTH LIMIT (L)</label>
+              <input type="number" class="form-control bg-dark text-light border-secondary" id="dls-limit-input" value="12" min="1" max="40">
+            </div>
+
+            <!-- Heuristic Selection (For GBFS and A*) -->
+            <div class="mb-3 d-none" id="heuristic-selection-group">
+              <label class="form-label text-muted small fw-semibold">HEURISTIC FUNCTION</label>
+              <select class="form-select bg-dark text-light border-secondary" id="heuristic-select">
+                <option value="manhattan" selected>Manhattan Distance (h₂)</option>
+                <option value="misplaced">Misplaced Tiles (h₁)</option>
+              </select>
+            </div>
+
+            <!-- Action Button -->
+            <button class="btn-cyber w-100 py-2 fs-6 mt-2" id="btn-run-search">
+              <span>▶ Run Search Algorithm</span>
+            </button>
+
+          </div>
+
+          <!-- Real-Time Search Process Monitor (Section 5) -->
+          <div class="glass-card">
+            <div class="glass-card-header">
+              <h2 class="card-title-glow">📡 Search Process Monitor</h2>
+              <span class="badge bg-primary">Live</span>
+            </div>
+
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-label">Nodes Generated</div>
+                <div class="stat-value" id="rt-nodes-gen">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Nodes Expanded</div>
+                <div class="stat-value stat-highlight" id="rt-nodes-exp">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Current Depth</div>
+                <div class="stat-value" id="rt-current-depth">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Path Cost g(n)</div>
+                <div class="stat-value" id="rt-path-cost">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Heuristic h(n)</div>
+                <div class="stat-value" id="rt-h-value">-</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Evaluation f(n)</div>
+                <div class="stat-value" id="rt-f-value">-</div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between text-muted small mb-2 px-1">
+              <span>Frontier (Open): <strong class="text-light" id="rt-frontier-count">0</strong></span>
+              <span>Explored (Closed): <strong class="text-light" id="rt-explored-count">0</strong></span>
+              <span>Last Move: <strong class="text-info" id="rt-last-move">None</strong></span>
+            </div>
+
+            <!-- Successor States Preview -->
+            <div class="mt-3">
+              <label class="form-label text-muted small fw-semibold">GENERATED SUCCESSOR STATES</label>
+              <div class="successor-container" id="successors-preview-container">
+                <span class="text-muted small">Run search to inspect successor nodes</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Puzzle Visualizer Board, Controls & Solution Summary -->
+        <div class="col-lg-7">
+          
+          <!-- Board Visualization Card (Section 4) -->
+          <div class="glass-card mb-4 text-center">
+            <div class="glass-card-header">
+              <h2 class="card-title-glow">🧩 Interactive Puzzle Visualizer</h2>
+              <span class="badge bg-info text-dark" id="step-counter-badge">Ready</span>
+            </div>
+
+            <!-- Animated 3x3 Puzzle Board -->
+            <div class="puzzle-board-container">
+              <div id="main-puzzle-board"></div>
+            </div>
+
+            <!-- Interactive Playback Controls (Section 9) -->
+            <div class="playback-controls-bar">
+              <button class="btn-cyber-outline btn-sm" id="btn-prev" title="Previous Step">
+                ⏮ Prev
+              </button>
+              <button class="btn-cyber btn-sm" id="btn-play" title="Run / Play">
+                ▶ Play
+              </button>
+              <button class="btn-cyber-outline btn-sm" id="btn-pause" title="Pause" disabled>
+                ⏸ Pause
+              </button>
+              <button class="btn-cyber-outline btn-sm" id="btn-next" title="Next Step">
+                Next ⏭
+              </button>
+              <button class="btn-cyber-outline btn-sm text-danger" id="btn-reset" title="Reset">
+                🔄 Reset
+              </button>
+
+              <div class="d-flex align-items-center gap-2 ms-sm-3 mt-2 mt-sm-0">
+                <label for="speed-slider" class="text-muted small mb-0">Speed:</label>
+                <input type="range" class="form-range" id="speed-slider" min="0.25" max="3.0" step="0.25" value="1.0" style="width: 90px;">
+                <span class="text-info small fw-bold" id="speed-label">1.0x</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Solution Summary Card (Section 6) -->
+          <div class="glass-card">
+            <div class="glass-card-header">
+              <h2 class="card-title-glow">📋 Solution Summary</h2>
+              <span class="badge bg-success">Metrics</span>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Solution Status</div>
+                  <div class="stat-value fs-6 text-success" id="sum-found">-</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Total Moves</div>
+                  <div class="stat-value text-info" id="sum-moves">-</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Nodes Generated</div>
+                  <div class="stat-value" id="sum-generated">-</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Nodes Expanded</div>
+                  <div class="stat-value" id="sum-expanded">-</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Max Search Depth</div>
+                  <div class="stat-value" id="sum-depth">-</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Execution Time</div>
+                  <div class="stat-value text-warning" id="sum-time">-</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Path Cost</div>
+                  <div class="stat-value" id="sum-cost">-</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-md-3">
+                <div class="stat-card">
+                  <div class="stat-label">Approx Memory</div>
+                  <div class="stat-value text-muted fs-6" id="sum-memory">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 7: COMPARISON PAGE
+         ========================================== -->
+    <section id="section-comparison" class="app-section d-none">
+      <div class="glass-card mb-4">
+        <div class="glass-card-header">
+          <div>
+            <h2 class="card-title-glow">📊 Algorithm Performance Comparison</h2>
+            <p class="text-muted small mb-0">Benchmark all 6 AI search algorithms on the exact same puzzle instance</p>
+          </div>
+          <button class="btn-cyber btn-cyber-accent" id="btn-run-benchmark">
+            ⚡ Run All Benchmarks
+          </button>
+        </div>
+
+        <!-- Benchmark Progress -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between text-muted small mb-1">
+            <span id="benchmark-status-text">Click "Run All Benchmarks" to test BFS, DFS, DLS, IDDLS, GBFS, and A*</span>
+          </div>
+          <div class="progress" style="height: 6px; background: rgba(255,255,255,0.08);">
+            <div class="progress-bar bg-info" id="benchmark-progress-bar" role="progressbar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Comparison Table (Exact Format from PDF Page 6) -->
+        <div class="cyber-table-wrapper">
+          <table class="cyber-table">
+            <thead>
+              <tr>
+                <th>Algorithm</th>
+                <th>Solution Found</th>
+                <th>Nodes Expanded</th>
+                <th>Moves</th>
+                <th>Time</th>
+                <th>Memory</th>
+              </tr>
+            </thead>
+            <tbody id="benchmark-table-body">
+              <tr>
+                <td class="fw-bold">BFS</td>
+                <td><span class="text-muted">-</span></td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">DFS</td>
+                <td><span class="text-muted">-</span></td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">DLS</td>
+                <td><span class="text-muted">-</span></td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">IDDLS</td>
+                <td><span class="text-muted">-</span></td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">GBFS</td>
+                <td><span class="text-muted">-</span></td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">A*</td>
+                <td><span class="text-muted">-</span></td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 8: ALGORITHM INFORMATION PAGE
+         ========================================== -->
+    <section id="section-docs" class="app-section d-none">
+      <div class="glass-card mb-4">
+        <div class="glass-card-header">
+          <h2 class="card-title-glow">📖 Search Algorithm Theoretical Reference</h2>
+          <span class="badge bg-secondary">Documentation</span>
+        </div>
+
+        <!-- BFS -->
+        <div class="algo-card">
+          <div class="algo-card-title">
+            <h4>1. Breadth First Search (BFS)</h4>
+            <div class="d-flex gap-2">
+              <span class="complexity-pill">Time: O(b^d)</span>
+              <span class="complexity-pill">Space: O(b^d)</span>
+            </div>
+          </div>
+          <p class="text-secondary small"><strong>Working Principle:</strong> Systematically expands the shallowest unexpanded node across the frontier using a FIFO queue. It explores every node at level k before any node at level k+1.</p>
+          <div class="row g-2 text-secondary small">
+            <div class="col-md-6"><strong>Advantages:</strong> Complete; guaranteed to find the shortest path / minimum moves.</div>
+            <div class="col-md-6"><strong>Limitations:</strong> High space complexity; exponential memory exhaustion for deep goals.</div>
+            <div class="col-md-6"><strong>Completeness:</strong> Yes (finite branching).</div>
+            <div class="col-md-6"><strong>Optimality:</strong> Yes (unit step costs).</div>
+          </div>
+        </div>
+
+        <!-- DFS -->
+        <div class="algo-card">
+          <div class="algo-card-title">
+            <h4>2. Depth First Search (DFS)</h4>
+            <div class="d-flex gap-2">
+              <span class="complexity-pill">Time: O(b^m)</span>
+              <span class="complexity-pill">Space: O(bm)</span>
+            </div>
+          </div>
+          <p class="text-secondary small"><strong>Working Principle:</strong> Explores along each branch as deeply as possible using a LIFO stack before backtracking upon dead ends.</p>
+          <div class="row g-2 text-secondary small">
+            <div class="col-md-6"><strong>Advantages:</strong> Extremely modest memory footprint O(bm).</div>
+            <div class="col-md-6"><strong>Limitations:</strong> Can get stuck in deep paths; non-optimal.</div>
+            <div class="col-md-6"><strong>Completeness:</strong> No (unless cycle detection in finite graph).</div>
+            <div class="col-md-6"><strong>Optimality:</strong> No.</div>
+          </div>
+        </div>
+
+        <!-- DLS -->
+        <div class="algo-card">
+          <div class="algo-card-title">
+            <h4>3. Depth Limited Search (DLS)</h4>
+            <div class="d-flex gap-2">
+              <span class="complexity-pill">Time: O(b^l)</span>
+              <span class="complexity-pill">Space: O(bl)</span>
+            </div>
+          </div>
+          <p class="text-secondary small"><strong>Working Principle:</strong> Executes Depth First Search up to a predetermined depth cutoff limit L.</p>
+          <div class="row g-2 text-secondary small">
+            <div class="col-md-6"><strong>Advantages:</strong> Prevents infinite looping and runaway execution.</div>
+            <div class="col-md-6"><strong>Limitations:</strong> Incomplete if goal depth d > L.</div>
+            <div class="col-md-6"><strong>Completeness:</strong> Yes if d <= L.</div>
+            <div class="col-md-6"><strong>Optimality:</strong> No.</div>
+          </div>
+        </div>
+
+        <!-- IDDLS -->
+        <div class="algo-card">
+          <div class="algo-card-title">
+            <h4>4. Iterative Deepening Depth Limited Search (IDDLS)</h4>
+            <div class="d-flex gap-2">
+              <span class="complexity-pill">Time: O(b^d)</span>
+              <span class="complexity-pill">Space: O(bd)</span>
+            </div>
+          </div>
+          <p class="text-secondary small"><strong>Working Principle:</strong> Progressively increases the depth limit (0, 1, 2, ... d) executing DLS at each iteration until the solution is discovered.</p>
+          <div class="row g-2 text-secondary small">
+            <div class="col-md-6"><strong>Advantages:</strong> Combines BFS completeness/optimality with DFS linear memory efficiency.</div>
+            <div class="col-md-6"><strong>Limitations:</strong> Re-generates nodes at upper levels across iterations.</div>
+            <div class="col-md-6"><strong>Completeness:</strong> Yes.</div>
+            <div class="col-md-6"><strong>Optimality:</strong> Yes (unit step costs).</div>
+          </div>
+        </div>
+
+        <!-- GBFS -->
+        <div class="algo-card">
+          <div class="algo-card-title">
+            <h4>5. Greedy Best First Search (GBFS)</h4>
+            <div class="d-flex gap-2">
+              <span class="complexity-pill">Time: O(b^m) worst</span>
+              <span class="complexity-pill">Space: O(b^m)</span>
+            </div>
+          </div>
+          <p class="text-secondary small"><strong>Working Principle:</strong> Evaluates nodes strictly by their heuristic estimate f(n) = h(n), picking the state estimated closest to the goal.</p>
+          <div class="row g-2 text-secondary small">
+            <div class="col-md-6"><strong>Advantages:</strong> Extremely fast when heuristic guidance is strong.</div>
+            <div class="col-md-6"><strong>Limitations:</strong> Vulnerable to false paths and local minima; non-optimal.</div>
+            <div class="col-md-6"><strong>Completeness:</strong> No (without cycle check).</div>
+            <div class="col-md-6"><strong>Optimality:</strong> No.</div>
+          </div>
+        </div>
+
+        <!-- A* Search -->
+        <div class="algo-card">
+          <div class="algo-card-title">
+            <h4>6. A* Search</h4>
+            <div class="d-flex gap-2">
+              <span class="complexity-pill">Time: O(b^d)</span>
+              <span class="complexity-pill">Space: O(b^d)</span>
+            </div>
+          </div>
+          <p class="text-secondary small"><strong>Working Principle:</strong> Evaluates nodes using f(n) = g(n) + h(n), balancing the actual accumulated cost g(n) with the admissible heuristic estimate h(n).</p>
+          <div class="row g-2 text-secondary small">
+            <div class="col-md-6"><strong>Advantages:</strong> Optimally efficient; guaranteed shortest path with admissible heuristics.</div>
+            <div class="col-md-6"><strong>Limitations:</strong> Stores all generated nodes in memory.</div>
+            <div class="col-md-6"><strong>Completeness:</strong> Yes.</div>
+            <div class="col-md-6"><strong>Optimality:</strong> Yes (with admissible h).</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Scripts -->
+  <script src="js/puzzle.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/comparison.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
